@@ -44,12 +44,33 @@ const SupportPage = () => {
         // AI Response Simulation
         setTimeout(() => {
             let aiText = "Thank you for explaining. I've noted this down. Would you like me to open a formal ticket for human review?";
+            let newUrgency = 'Normal';
+            let autoCreateTicket = false;
+            
             if (userMessage.text.toLowerCase().includes('harass') || userMessage.text.toLowerCase().includes('safe')) {
                 aiText = AI_RESPONSES[0];
                 setUrgency('Confidential');
+                newUrgency = 'Confidential';
+                autoCreateTicket = true;
             } else if (userMessage.text.toLowerCase().includes('bug') || userMessage.text.toLowerCase().includes('access')) {
                 aiText = AI_RESPONSES[1];
+                autoCreateTicket = true;
+            } else if (userMessage.text.toLowerCase() === 'yes' || userMessage.text.toLowerCase() === 'yes please') {
+                aiText = "Understood. I have opened a formal ticket for you. A human agent will review it shortly.";
+                autoCreateTicket = true;
             }
+
+            if (autoCreateTicket) {
+                const newTicket = {
+                    id: `T-${Math.floor(1000 + Math.random() * 9000)}`,
+                    title: userMessage.text.length > 25 ? userMessage.text.substring(0, 25) + '...' : userMessage.text,
+                    status: 'Escalated',
+                    urgency: newUrgency,
+                    timestamp: 'Just now'
+                };
+                setTickets(prev => [newTicket, ...prev]);
+            }
+
             setChatMessages(prev => [...prev, { sender: 'ai', text: aiText }]);
         }, 1000);
     };
