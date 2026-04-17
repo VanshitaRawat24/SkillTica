@@ -1,8 +1,11 @@
-SkillTica - HR/Employee Dashboard
+# SkillTica
 
-Hackathon project repository: https://github.com/VanshitaRawat24/SkillTica
+Hackathon project repository.
 
 ## Tech Stack
-- Frontend:
-- Backend:
-- Database:
+- Frontend
+- Backend
+- Database
+
+## Setup
+Project setup instructions will be updated.
