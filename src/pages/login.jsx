@@ -21,9 +21,9 @@ const Login = () => {
 
     let res;
     if (isLogin) {
-      res = await login(email, password);
+      res = await login(email.trim(), password.trim());
     } else {
-      res = await register(name, email, password);
+      res = await register(name.trim(), email.trim(), password.trim());
     }
 
     if (res.error) {
@@ -64,8 +64,8 @@ const Login = () => {
           )}
 
           <div className="form-group mb-4">
-            <label className="form-label">Email</label>
-            <input required className="form-control" type="email" placeholder="email@company.com" value={email} onChange={e => setEmail(e.target.value)} />
+            <label className="form-label">Email or Employee ID</label>
+            <input required className="form-control" type="text" placeholder="email@company.com or emp_..." value={email} onChange={e => setEmail(e.target.value)} />
           </div>
 
           <div className="form-group mb-6">
