@@ -73,3 +73,33 @@ Personalized analytics dashboard:
   * Career guidance
   * Skill improvement suggestions
 * Real-time interactive support
+
+👔 HR Portal Features
+
+📊 1. Master Dashboard (/hr/dashboard)
+Organization-wide KPIs:
+
+Total employees
+Average profile completion
+Burnout risk indicators
+High-potential talent identification
+Department-wise analytics
+
+📂 2. Employee Directory (/hr/directory)
+
+Centralized employee database
+Advanced search & filters:
+Department
+Location
+Risk level
+Quick access to employee profiles
+
+🔍 3. Deep-Dive Employee Profile (/hr/employee/)
+
+Complete employee lifecycle view
+Displays:
+Skill badges
+Education & experience timeline
+AI insights:
+Flight risk prediction
+Promotion readiness
