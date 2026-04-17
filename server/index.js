@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 import express from 'express';
 import cors from 'cors';
 import sqlite3 from 'sqlite3';
@@ -438,4 +436,3 @@ app.get(['/api/ai/role-fit/:userId', '/api/ai/role-fit'], (req, res) => {
 
 const PORT = 3001;
 app.listen(PORT, () => console.log('Backend API running on http://localhost:' + PORT));
->>>>>>> 23dba167b0e04c349b0a7ab0425e31c642a7abfb
