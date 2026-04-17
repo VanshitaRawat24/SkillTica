@@ -1,46 +1,49 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import sqlite3 from 'sqlite3';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = join(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbPath);
+// Modular Route Imports
+import authRoutes from './routes/authRoutes.js';
+import profileRoutes from './routes/profileRoutes.js';
+import resumeRoutes from './routes/resumeRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Initialize Database
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    email TEXT UNIQUE,
-    password TEXT,
-    role TEXT
-  )`);
-  db.run(`CREATE TABLE IF NOT EXISTS profiles (
-    userId TEXT PRIMARY KEY,
-    personal TEXT,
-    education TEXT,
-    skills TEXT,
-    experience TEXT,
-    certs TEXT,
-    projects TEXT,
-    behavioral TEXT,
-    career TEXT,
-    completionPct INTEGER DEFAULT 0
-  )`);
-  
-  // Create default HR Admin if none exists
-  db.get("SELECT id FROM users WHERE email = 'admin@peopleiq.io'", (err, row) => {
-    if (!row) {
-      db.run("INSERT INTO users (id, name, email, password, role) VALUES ('hr_admin_1', 'Sarah Admin', 'admin@peopleiq.io', 'admin123', 'hr')");
-    }
-  });
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api', resumeRoutes); // Provides /api/analyze-resume
+app.use('/api', notificationRoutes); // Provides /api/notify
+
+// Root Route
+app.get('/', (req, res) => res.json({ 
+    message: 'Welcome to SkillTica API',
+    endpoints: ['/api/auth', '/api/profile', '/api/resume', '/api/admin', '/api/notify'],
+    status: 'Running'
+}));
+
+// Health Check
+app.get('/health', (req, res) => res.json({ status: 'OK' }));
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`🚀 SkillTica Backend running on http://localhost:${PORT}`);
+    console.log(`- Auth: /api/auth`);
+    console.log(`- Profile: /api/profile`);
+    console.log(`- Resume: /api/resume`);
+    console.log(`- Admin: /api/admin`);
+    console.log(`- Notify: /api/notify`);
 });
+<<<<<<< HEAD
 
 const calculateCompletion = (profile) => {
   const sections = ['personal', 'education', 'skills', 'experience', 'certs', 'projects', 'behavioral', 'career'];
@@ -140,3 +143,5 @@ app.get('/api/admin/employees', (req, res) => {
 
 const PORT = 3001;
 app.listen(PORT, () => console.log('Backend API running on http://localhost:' + PORT));
+=======
+>>>>>>> 9079c61c652579c58fee0141b3efc137d030d75c

@@ -8,14 +8,55 @@ export const AppProvider = ({ children }) => {
   const [currentRole, setCurrentRole] = useState(null);
   const [employees, setEmployees] = useState([]);
 
+  // Data Normalization Layer (Step 1 of HR Integration Roadmap)
+  const normalizeEmployeeData = (raw) => {
+    // Safely parse JSON sections
+    const parse = (str) => {
+      try { return (str && typeof str === 'string') ? JSON.parse(str) : (str || {}); } 
+      catch (e) { return {}; }
+    };
+
+    const personal = parse(raw.personal);
+    const experience = parse(raw.experience);
+    const behavioral = parse(raw.behavioral);
+
+    return {
+      ...raw,
+      personal,
+      experience,
+      behavioral,
+      // Mapping to UI property names
+      profileCompletion: raw.completionPct || 0,
+      department: experience.department || personal.department || 'Engineering',
+      currentRole: experience.currentRole || raw.currentRole || 'Employee',
+      yearsExperience: parseInt(experience.years) || 0,
+      riskLevel: raw.riskLevel || 'low', // default until AI analysis is integrated
+      behavioralScore: raw.score || 85,
+      highPotential: (raw.score > 80 || raw.completionPct > 70),
+      promotionReady: (parseInt(experience.years) >= 2 && raw.score > 75),
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${raw.name || 'default'}`,
+      roleFitScores: { 
+        'Product Manager': 65, 
+        'Software Engineer': 85, 
+        'UX Designer': 40 
+      } // simulated for now
+    };
+  };
+
   // Fetch HR data
   const fetchAllEmployees = async () => {
     try {
       const res = await fetch(`${API_BASE}/admin/employees`);
       const data = await res.json();
-      setEmployees(data);
+      
+      // Map raw backend data to HR UI components via Normalization Layer
+      const normalized = Array.isArray(data.employees) 
+        ? data.employees.map(normalizeEmployeeData) 
+        : (Array.isArray(data) ? data.map(normalizeEmployeeData) : []);
+
+      setEmployees(normalized);
     } catch (e) {
-      console.error(e);
+      console.error('Fetch Employees Error:', e);
     }
   };
 
