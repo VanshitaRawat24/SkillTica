@@ -7,10 +7,22 @@ export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentRole, setCurrentRole] = useState(null);
   const [employees, setEmployees] = useState([]);
+  const [token, setToken] = useState(localStorage.getItem('skilltica_token'));
 
-  // Data Normalization Layer (Step 1 of HR Integration Roadmap)
+  // Helper for authenticated fetches
+  const authFetch = async (url, options = {}) => {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return fetch(url, { ...options, headers });
+  };
+
+  // Data Normalization Layer
   const normalizeEmployeeData = (raw) => {
-    // Safely parse JSON sections
     const parse = (str) => {
       try { return (str && typeof str === 'string') ? JSON.parse(str) : (str || {}); } 
       catch (e) { return {}; }
@@ -25,12 +37,11 @@ export const AppProvider = ({ children }) => {
       personal,
       experience,
       behavioral,
-      // Mapping to UI property names
       profileCompletion: raw.completionPct || 0,
       department: experience.department || personal.department || 'Engineering',
       currentRole: experience.currentRole || raw.currentRole || 'Employee',
       yearsExperience: parseInt(experience.years) || 0,
-      riskLevel: raw.riskLevel || 'low', // default until AI analysis is integrated
+      riskLevel: raw.riskLevel || 'low',
       behavioralScore: raw.score || 85,
       highPotential: (raw.score > 80 || raw.completionPct > 70),
       promotionReady: (parseInt(experience.years) >= 2 && raw.score > 75),
@@ -39,17 +50,16 @@ export const AppProvider = ({ children }) => {
         'Product Manager': 65, 
         'Software Engineer': 85, 
         'UX Designer': 40 
-      } // simulated for now
+      }
     };
   };
 
   // Fetch HR data
   const fetchAllEmployees = async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/employees`);
+      const res = await authFetch(`${API_BASE}/admin/employees`);
       const data = await res.json();
       
-      // Map raw backend data to HR UI components via Normalization Layer
       const normalized = Array.isArray(data.employees) 
         ? data.employees.map(normalizeEmployeeData) 
         : (Array.isArray(data) ? data.map(normalizeEmployeeData) : []);
@@ -59,6 +69,49 @@ export const AppProvider = ({ children }) => {
       console.error('Fetch Employees Error:', e);
     }
   };
+
+  // Restore session
+  useEffect(() => {
+    const restoreSession = async () => {
+      const savedToken = localStorage.getItem('skilltica_token');
+      const savedUser = localStorage.getItem('skilltica_user');
+      
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        const user = JSON.parse(savedUser);
+        setCurrentRole(user.role);
+        
+        // Refresh profile data
+        try {
+          if (user.role === 'employee') {
+            const res = await fetch(`${API_BASE}/profile/${user.id}`, {
+              headers: { 'Authorization': `Bearer ${savedToken}` }
+            });
+            if (res.ok) {
+              const profile = await res.json();
+              setCurrentUser({ ...user, ...profile });
+            } else {
+              logout();
+            }
+          } else {
+            setCurrentUser(user);
+            // Initial fetch if HR
+            const empRes = await fetch(`${API_BASE}/admin/employees`, {
+              headers: { 'Authorization': `Bearer ${savedToken}` }
+            });
+            const empData = await empRes.json();
+            const normalized = Array.isArray(empData.employees) 
+                ? empData.employees.map(normalizeEmployeeData) 
+                : (Array.isArray(empData) ? empData.map(normalizeEmployeeData) : []);
+            setEmployees(normalized);
+          }
+        } catch (e) {
+          console.error('Session restoration failed', e);
+        }
+      }
+    };
+    restoreSession();
+  }, []);
 
   const login = async (email, password) => {
     try {
@@ -70,15 +123,21 @@ export const AppProvider = ({ children }) => {
       const data = await res.json();
       if (data.error) return { error: data.error };
       
+      setToken(data.token);
       setCurrentRole(data.user.role);
+      localStorage.setItem('skilltica_token', data.token);
+      localStorage.setItem('skilltica_user', JSON.stringify(data.user));
       
       if (data.user.role === 'employee') {
-        const profRes = await fetch(`${API_BASE}/profile/${data.user.id}`);
+        const profRes = await fetch(`${API_BASE}/profile/${data.user.id}`, {
+          headers: { 'Authorization': `Bearer ${data.token}` }
+        });
         const profile = await profRes.json();
         setCurrentUser({ ...data.user, ...profile });
       } else {
         setCurrentUser(data.user);
-        fetchAllEmployees();
+        // Trigger initial fetch for HR
+        setTimeout(fetchAllEmployees, 100);
       }
       return { success: true };
     } catch (e) {
@@ -95,6 +154,8 @@ export const AppProvider = ({ children }) => {
       });
       const data = await res.json();
       if (data.error) return { error: data.error };
+      
+      // Auto-login after registration
       return login(email, password);
     } catch (e) {
       return { error: 'Network error' };
@@ -104,16 +165,14 @@ export const AppProvider = ({ children }) => {
   const updateProfileSection = async (section, data) => {
     if (!currentUser || currentRole !== 'employee') return;
     try {
-      const res = await fetch(`${API_BASE}/profile/${currentUser.id}/${section}`, {
+      const res = await authFetch(`${API_BASE}/profile/${currentUser.id}/${section}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
       const resData = await res.json();
       
       if (resData.success) {
-        // Refresh local user
-        const profRes = await fetch(`${API_BASE}/profile/${currentUser.id}`);
+        const profRes = await authFetch(`${API_BASE}/profile/${currentUser.id}`);
         const profile = await profRes.json();
         setCurrentUser({ ...currentUser, ...profile });
       }
@@ -125,11 +184,14 @@ export const AppProvider = ({ children }) => {
   const logout = () => {
     setCurrentUser(null);
     setCurrentRole(null);
+    setToken(null);
+    localStorage.removeItem('skilltica_token');
+    localStorage.removeItem('skilltica_user');
   };
 
   return (
     <AppContext.Provider value={{ 
-      currentUser, currentRole, employees, 
+      currentUser, currentRole, employees, token,
       login, register, logout, updateProfileSection, fetchAllEmployees 
     }}>
       {children}
