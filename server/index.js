@@ -70,7 +70,9 @@ app.post('/api/auth/register', (req, res) => {
 
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
-  db.get('SELECT id, name, email, role FROM users WHERE email = ? AND password = ?', [email, password], (err, row) => {
+  const loginId = typeof email === 'string' ? email.trim() : email;
+  
+  db.get('SELECT id, name, email, role FROM users WHERE (email = ? OR id = ?) AND password = ?', [loginId, loginId, password], (err, row) => {
     if (err || !row) return res.status(401).json({ error: 'Invalid credentials' });
     res.json({ user: row });
   });
