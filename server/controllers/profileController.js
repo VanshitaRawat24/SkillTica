@@ -106,3 +106,46 @@ export const scoreProfile = async (req, res) => {
     return res.status(500).json({ error: 'Failed to analyze profile.', details: error.message });
   }
 };
+
+export const getCareerCoachAdvice = async (req, res) => {
+  try {
+    const { message, profile } = req.body;
+
+    // Fallback Mock Responses if API Key is missing
+    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+      const mockTips = [
+        "That's a great direction! Given your current skills, I'd recommend looking into Advanced SQL and Data Visualization tools like Tableau next.",
+        "Based on your profile, focusing on Python for Data Science and learning libraries like Pandas/Scikit-learn will directly boost your readiness.",
+        "You should definitely explore Cloud Data Warehousing (like Snowflake or BigQuery) to complement your current analyst experience.",
+        "I suggest working on a portfolio project that combines your Java and Python skills, perhaps an automated data pipeline!",
+        "Networking with Senior Data Scientists in your area could give you more niche insights into the local job market."
+      ];
+      const randomTip = mockTips[Math.floor(Math.random() * mockTips.length)];
+      return res.json({ response: `[Demo Mode] ${randomTip}` });
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt = `
+      You are an expert AI Career Coach. 
+      The user's current profile is: ${JSON.stringify(profile || {})}
+      
+      User says: "${message}"
+      
+      Provide a helpful, motivational, and technical career advice response. 
+      Keep it conversational (2-3 sentences). 
+      If they ask "what next", suggest a specific path based on their skills.
+      Return ONLY the plain text response.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().trim();
+
+    return res.json({ response: text });
+  } catch (error) {
+    console.error('Error in getCareerCoachAdvice details:', error);
+    return res.status(500).json({ error: 'Failed to get career advice.', details: error.message });
+  }
+};
