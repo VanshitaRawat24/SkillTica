@@ -9,7 +9,7 @@ const HrDashboard = () => {
   const { employees } = useApp();
 
   const totalEmp = employees.length;
-  const avgCompletion = Math.round(employees.reduce((s, e) => s + e.profileCompletion, 0) / totalEmp);
+  const avgCompletion = totalEmp > 0 ? Math.round(employees.reduce((s, e) => s + (e.profileCompletion || 0), 0) / totalEmp) : 0;
   const highPotential = employees.filter(e => e.highPotential).length;
   const burnout = employees.filter(e => e.riskLevel === 'high' || e.riskLevel === 'medium').length;
   const promotionReady = employees.filter(e => e.promotionReady).length;
