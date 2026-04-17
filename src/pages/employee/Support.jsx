@@ -27,6 +27,7 @@ const SupportPage = () => {
     // Chat State
     const [chatMessages, setChatMessages] = useState([{ sender: 'ai', text: "Hi there. I'm your AI Support Assistant. How can I help you today? You can report technical issues, or confidentially discuss workplace concerns." }]);
     const [chatInput, setChatInput] = useState('');
+    const [stagedTicketContext, setStagedTicketContext] = useState(null);
     const chatEndRef = useRef(null);
 
     useEffect(() => {
@@ -35,23 +36,55 @@ const SupportPage = () => {
 
     const handleSendChat = (e) => {
         e.preventDefault();
-        if (!chatInput.trim()) return;
+        const input = chatInput.trim();
+        if (!input) return;
 
-        const userMessage = { sender: 'user', text: chatInput };
+        const userMessage = { sender: 'user', text: input };
         setChatMessages(prev => [...prev, userMessage]);
         setChatInput('');
 
-        // AI Response Simulation
+        // AI Logic
         setTimeout(() => {
-            let aiText = "Thank you for explaining. I've noted this down. Would you like me to open a formal ticket for human review?";
-            if (userMessage.text.toLowerCase().includes('harass') || userMessage.text.toLowerCase().includes('safe')) {
-                aiText = AI_RESPONSES[0];
-                setUrgency('Confidential');
-            } else if (userMessage.text.toLowerCase().includes('bug') || userMessage.text.toLowerCase().includes('access')) {
-                aiText = AI_RESPONSES[1];
+            let aiText = "";
+            let shouldRaiseTicket = false;
+
+            // Handle confirmation if we were waiting for one
+            if (stagedTicketContext && (input.toLowerCase() === 'yes' || input.toLowerCase().includes('yeah') || input.toLowerCase().includes('sure'))) {
+                const newTicket = {
+                    id: `T-${Math.floor(1000 + Math.random() * 9000)}`,
+                    title: stagedTicketContext.substring(0, 30) + '...',
+                    status: 'Open',
+                    urgency: urgency,
+                    timestamp: 'Just now'
+                };
+                setTickets(prev => [newTicket, ...prev]);
+                aiText = `I've successfully raised formal ticket ${newTicket.id} for human review. Our team will look into your concern regarding: "${stagedTicketContext.substring(0, 50)}..."`;
+                setStagedTicketContext(null); // Clear context
+            } else {
+                // Determine response based on input
+                if (input.toLowerCase().includes('harass') || input.toLowerCase().includes('safe') || input.toLowerCase().includes('manager') || input.toLowerCase().includes('leave')) {
+                    aiText = AI_RESPONSES[0];
+                    setUrgency('Confidential');
+                    setStagedTicketContext(input);
+                    aiText += " Should I open a formal, confidential ticket for you?";
+                } else if (input.toLowerCase().includes('bug') || input.toLowerCase().includes('access')) {
+                    aiText = AI_RESPONSES[1];
+                    const newTicket = {
+                        id: `T-${Math.floor(1000 + Math.random() * 9000)}`,
+                        title: input.substring(0, 30) + '...',
+                        status: 'Open',
+                        urgency: 'Normal',
+                        timestamp: 'Just now'
+                    };
+                    setTickets(prev => [newTicket, ...prev]);
+                } else {
+                    aiText = "Thank you for explaining. I've noted this down. Would you like me to open a formal ticket for human review?";
+                    setStagedTicketContext(input);
+                }
             }
+            
             setChatMessages(prev => [...prev, { sender: 'ai', text: aiText }]);
-        }, 1000);
+        }, 800);
     };
 
     const handleCreateTicket = () => {
