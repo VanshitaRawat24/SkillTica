@@ -17,11 +17,34 @@ const AICoach = () => {
         e.preventDefault();
         if (!input.trim()) return;
 
-        setMessages(p => [...p, { sender: 'user', text: input }]);
+        const userText = input;
+        setMessages(p => [...p, { sender: 'user', text: userText }]);
         setInput('');
 
         setTimeout(() => {
-            setMessages(p => [...p, { sender: 'ai', text: 'That is a great direction! Based on your profile, focusing on system architecture projects next quarter will directly boost your readiness for that path.' }]);
+            const lowerInput = userText.toLowerCase();
+            const fallbacks = [
+                "That's an interesting thought! Keep updating your profile so I can give you more tailored advice.",
+                "I see what you mean. Have you considered discussing this with your direct manager in your next 1-on-1?",
+                "Great question! Exploring different career paths is always beneficial. Let me know if you need specific resources.",
+                "I've noted that down. Exploring new areas is the best way to uncover hidden strengths!"
+            ];
+            
+            let response = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+
+            if (lowerInput.includes('react') || lowerInput.includes('code') || lowerInput.includes('design') || lowerInput.includes('python') || lowerInput.includes('java') || lowerInput.includes('programming')) {
+                response = "Technical skills like that are highly valued. I recommend taking a new certification and adding it to your profile to boost your promotion readiness!";
+            } else if (lowerInput.includes('skill') || lowerInput.includes('learn') || lowerInput.includes('course')) {
+                response = "Focusing on new skills is great! Have you checked out the 'Team Builder' section to see what skills are currently in high demand on other projects?";
+            } else if (lowerInput.includes('salary') || lowerInput.includes('pay') || lowerInput.includes('raise')) {
+                response = "Salary and compensation are important. To maximize your value, make sure your 'Experience' and 'Skills' sections are 100% up-to-date so HR can map you correctly.";
+            } else if (lowerInput.includes('manager') || lowerInput.includes('lead') || lowerInput.includes('promote')) {
+                response = "Transitioning to a leadership role requires behavioral maturity. Try updating your 'Behavioral' profile section—it greatly impacts your role fit score for management!";
+            } else if (lowerInput.includes('leave') || lowerInput.includes('quit') || lowerInput.includes('vacation')) {
+                response = "If you're feeling burned out or need time off, please make sure you coordinate with your manager. Your well-being is important.";
+            }
+
+            setMessages(p => [...p, { sender: 'ai', text: response }]);
         }, 1200);
     };
 
