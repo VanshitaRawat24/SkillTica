@@ -70,4 +70,30 @@ export const AppProvider = ({ children }) => {
       });
       const resData = await res.json();
       
-    
+      if (resData.success) {
+        // Refresh local user
+        const profRes = await fetch(`${API_BASE}/profile/${currentUser.id}`);
+        const profile = await profRes.json();
+        setCurrentUser({ ...currentUser, ...profile });
+      }
+    } catch (e) {
+      console.error('Failed to update section', e);
+    }
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    setCurrentRole(null);
+  };
+
+  return (
+    <AppContext.Provider value={{ 
+      currentUser, currentRole, employees, 
+      login, register, logout, updateProfileSection, fetchAllEmployees 
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+export const useApp = () => useContext(AppContext);
