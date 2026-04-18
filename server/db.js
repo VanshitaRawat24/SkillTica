@@ -1,6 +1,7 @@
 import sqlite3 from 'sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import bcrypt from 'bcryptjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = join(__dirname, 'database.sqlite');
@@ -33,7 +34,8 @@ db.serialize(() => {
   // Create default HR Admin if none exists
   db.get("SELECT id FROM users WHERE email = 'admin@peopleiq.io'", (err, row) => {
     if (!row) {
-      db.run("INSERT INTO users (id, name, email, password, role) VALUES ('hr_admin_1', 'Sarah Admin', 'admin@peopleiq.io', 'admin123', 'hr')");
+      const hashedPassword = bcrypt.hashSync('admin123', 10);
+      db.run("INSERT INTO users (id, name, email, password, role) VALUES ('hr_admin_1', 'Sarah Admin', 'admin@peopleiq.io', ?, 'hr')", [hashedPassword]);
     }
   });
 

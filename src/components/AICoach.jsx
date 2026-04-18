@@ -1,28 +1,47 @@
 import { useState, useRef, useEffect } from 'react';
 import { Target, X, MessageCircle, Send, Sparkles } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 const AICoach = () => {
+    const { currentUser } = useApp();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
         { sender: 'ai', text: "Hey! I'm your AI Career Coach. Ready to figure out your next big move, or want to discuss a skill you're trying to learn?" }
     ]);
     const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
     const endRef = useRef(null);
 
     useEffect(() => {
         endRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isOpen]);
+    }, [messages, isOpen, isTyping]);
 
-    const handleSend = (e) => {
+    const handleSend = async (e) => {
         e.preventDefault();
-        if (!input.trim()) return;
+        const text = input.trim();
+        if (!text) return;
 
-        setMessages(p => [...p, { sender: 'user', text: input }]);
+        setMessages(p => [...p, { sender: 'user', text }]);
         setInput('');
+        setIsTyping(true);
 
-        setTimeout(() => {
-            setMessages(p => [...p, { sender: 'ai', text: 'That is a great direction! Based on your profile, focusing on system architecture projects next quarter will directly boost your readiness for that path.' }]);
-        }, 1200);
+        try {
+            const res = await fetch('http://localhost:3001/api/profile/coach', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: text,
+                    profile: currentUser
+                })
+            });
+            const data = await res.json();
+            setMessages(p => [...p, { sender: 'ai', text: data.response || "I'm sorry, I'm having trouble thinking right now. Could you try again?" }]);
+        } catch (err) {
+            console.error('Coach Error:', err);
+            setMessages(p => [...p, { sender: 'ai', text: "I'm having trouble connecting to my brain! Please check your network." }]);
+        } finally {
+            setIsTyping(false);
+        }
     };
 
     return (
@@ -57,6 +76,12 @@ const AICoach = () => {
                                 {m.text}
                             </div>
                         ))}
+                        {isTyping && (
+                            <div className="mr-6 p-2 rounded-lg text-xs italic text-secondary animate-pulse" 
+                                 style={{ background: 'var(--bg-tertiary)', alignSelf: 'flex-start' }}>
+                                Thinking...
+                            </div>
+                        )}
                         <div ref={endRef} />
                     </div>
 
