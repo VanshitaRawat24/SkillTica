@@ -30,7 +30,7 @@ const Sidebar = () => {
       <div className="sidebar-logo">
         <div className="logo-icon"><Brain size={22} /></div>
         <div>
-          <div className="logo-text">PeopleIQ</div>
+          <div className="logo-text">SkillTica</div>
           <div className="logo-sub">{currentRole === 'hr' ? 'HR Command Center' : 'Employee Portal'}</div>
         </div>
       </div>
