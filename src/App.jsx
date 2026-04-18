@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/Sidebar';
-import Login from './pages/Login';
+import Login from './login';
 
 // Employee pages
 import EmployeeDashboard from './pages/employee/Dashboard';
